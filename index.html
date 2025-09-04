@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de PDF desde Imágenes</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Generador de PDF desde Imágenes</h1>
+            <p>Carga, organiza y genera un PDF a partir de tus imágenes</p>
+        </header>
+
+        <main>
+            <!-- Sección de carga de imágenes -->
+            <section class="upload-section">
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-content">
+                        <span class="drop-icon">📁</span>
+                        <h3>Arrastra y suelta tus imágenes aquí</h3>
+                        <p>o</p>
+                        <button class="btn-primary" id="selectImagesBtn">Selecciona imágenes</button>
+                        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de lista de imágenes -->
+            <section class="images-section" id="imagesSection" style="display: none;">
+                <div class="section-header">
+                    <h2>Imágenes cargadas</h2>
+                    <div class="actions">
+                        <button class="btn-secondary" id="selectAllBtn">Seleccionar todas</button>
+                        <button class="btn-danger" id="deleteSelectedBtn" disabled>Eliminar seleccionadas</button>
+                        <button class="btn-danger" id="deleteAllBtn">Eliminar todas</button>
+                    </div>
+                </div>
+                <div class="images-list" id="imagesList"></div>
+            </section>
+
+            <!-- Sección de configuración del PDF -->
+            <section class="config-section">
+                <h2>Configuración del PDF</h2>
+                <div class="config-form">
+                    <div class="form-group">
+                        <label for="pageSize">Tamaño de página:</label>
+                        <select id="pageSize">
+                            <option value="a4" selected>A4</option>
+                            <option value="letter">Carta</option>
+                            <option value="legal">Legal</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Márgenes (cm):</label>
+                        <div class="margins-container">
+                            <div class="margin-input">
+                                <label for="marginTop">Superior</label>
+                                <input type="number" id="marginTop" min="0" step="0.1" value="1.5">
+                            </div>
+                            <div class="margin-input">
+                                <label for="marginRight">Derecho</label>
+                                <input type="number" id="marginRight" min="0" step="0.1" value="1.5">
+                            </div>
+                            <div class="margin-input">
+                                <label for="marginBottom">Inferior</label>
+                                <input type="number" id="marginBottom" min="0" step="0.1" value="1.5">
+                            </div>
+                            <div class="margin-input">
+                                <label for="marginLeft">Izquierdo</label>
+                                <input type="number" id="marginLeft" min="0" step="0.1" value="1.5">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fileName">Nombre del archivo:</label>
+                        <input type="text" id="fileName" placeholder="mi_documento">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de generación -->
+            <section class="generate-section">
+                <button class="btn-generate" id="generatePdfBtn" disabled>Generar PDF</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
