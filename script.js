@@ -24,6 +24,13 @@ const marginBottom = document.getElementById('marginBottom');
 const marginLeft = document.getElementById('marginLeft');
 const fileName = document.getElementById('fileName');
 
+// Variables para el reordenamiento táctil
+let touchDragEnabled = false;
+let activeTouch = null;
+let dragElement = null;
+let placeholder = null;
+let dragStartIndex = null;
+
 // Inicialización de eventos
 function initEvents() {
     // Eventos de drag and drop
@@ -66,6 +73,162 @@ function initEvents() {
 
     // Evento para habilitar/deshabilitar botón de generar PDF
     document.addEventListener('imageListUpdated', updateGenerateButton);
+    
+    // Inicializar eventos táctiles para el reordenamiento
+    initTouchEvents();
+}
+
+// Inicializar eventos táctiles para arrastrar en dispositivos móviles
+function initTouchEvents() {
+    // Detectar si es un dispositivo táctil
+    const isTouchDevice = 'ontouchstart' in document.documentElement;
+    
+    if (isTouchDevice) {
+        // Añadir instrucciones para usuarios táctiles
+        const instructions = document.createElement('div');
+        instructions.className = 'touch-instructions';
+        instructions.innerHTML = '<p>💡 Presiona prolongadamente sobre una imagen para arrastrarla</p>';
+        imagesSection.appendChild(instructions);
+        
+        // Añadir eventos táctiles a cada elemento de imagen
+        document.addEventListener('imageListUpdated', initImageTouchEvents);
+    }
+}
+
+// Inicializar eventos táctiles para las imágenes
+function initImageTouchEvents() {
+    const imageItems = imagesList.querySelectorAll('.image-item');
+    
+    imageItems.forEach(item => {
+        // Eliminar eventos anteriores para evitar duplicados
+        item.ontouchstart = null;
+        item.ontouchmove = null;
+        item.ontouchend = null;
+        item.ontouchcancel = null;
+        
+        // Evento para iniciar el arrastre táctil
+        item.addEventListener('touchstart', handleTouchStart, { passive: false });
+        item.addEventListener('touchmove', handleTouchMove, { passive: false });
+        item.addEventListener('touchend', handleTouchEnd);
+        item.addEventListener('touchcancel', handleTouchEnd);
+    });
+}
+
+// Manejar el inicio de un toque
+function handleTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    
+    activeTouch = e.touches[0];
+    dragElement = this;
+    dragStartIndex = Array.from(imagesList.children).indexOf(dragElement);
+    
+    // Crear un placeholder para mostrar dónde se insertará
+    placeholder = document.createElement('div');
+    placeholder.className = 'image-placeholder';
+    imagesList.insertBefore(placeholder, dragElement);
+    
+    // Añadir clase de arrastre
+    dragElement.classList.add('dragging');
+    
+    // Posicionar el elemento que se está arrastrando
+    dragElement.style.position = 'absolute';
+    dragElement.style.zIndex = '1000';
+    updateElementPosition(e.touches[0]);
+    
+    touchDragEnabled = true;
+    e.preventDefault();
+}
+
+// Manejar el movimiento durante el toque
+function handleTouchMove(e) {
+    if (!touchDragEnabled || e.touches.length !== 1) return;
+    
+    updateElementPosition(e.touches[0]);
+    updatePlaceholderPosition();
+    e.preventDefault();
+}
+
+// Manejar el final del toque
+function handleTouchEnd() {
+    if (!touchDragEnabled) return;
+    
+    // Restaurar estilos
+    if (dragElement) {
+        dragElement.classList.remove('dragging');
+        dragElement.style.position = '';
+        dragElement.style.zIndex = '';
+        dragElement.style.left = '';
+        dragElement.style.top = '';
+    }
+    
+    // Mover el elemento a la nueva posición
+    if (placeholder && placeholder.parentNode) {
+        imagesList.insertBefore(dragElement, placeholder);
+        imagesList.removeChild(placeholder);
+        
+        // Actualizar el estado según el nuevo orden
+        const newIndex = Array.from(imagesList.children).indexOf(dragElement);
+        if (dragStartIndex !== newIndex) {
+            // Reordenar el array de imágenes en el estado
+            const imageId = dragElement.dataset.id;
+            const imageIndex = state.images.findIndex(img => img.id === imageId);
+            const image = state.images[imageIndex];
+            
+            state.images.splice(imageIndex, 1);
+            state.images.splice(newIndex, 0, image);
+        }
+    }
+    
+    // Resetear variables
+    touchDragEnabled = false;
+    activeTouch = null;
+    dragElement = null;
+    placeholder = null;
+    dragStartIndex = null;
+}
+
+// Actualizar la posición del elemento durante el arrastre
+function updateElementPosition(touch) {
+    if (!dragElement) return;
+    
+    const rect = imagesList.getBoundingClientRect();
+    const x = touch.clientX - rect.left - (dragElement.offsetWidth / 2);
+    const y = touch.clientY - rect.top - (dragElement.offsetHeight / 2);
+    
+    dragElement.style.left = `${x}px`;
+    dragElement.style.top = `${y}px`;
+}
+
+// Actualizar la posición del placeholder durante el arrastre
+function updatePlaceholderPosition() {
+    if (!placeholder || !dragElement) return;
+    
+    // Encontrar el elemento más cercano al punto de toque
+    const items = Array.from(imagesList.children).filter(item => 
+        item !== placeholder && item !== dragElement
+    );
+    
+    let closestItem = null;
+    let closestOffset = Number.NEGATIVE_INFINITY;
+    
+    // Determinar la posición del placeholder
+    for (const item of items) {
+        const rect = item.getBoundingClientRect();
+        const offset = activeTouch.clientY - rect.top - rect.height / 2;
+        
+        if (offset < 0 && offset > closestOffset) {
+            closestOffset = offset;
+            closestItem = item;
+        }
+    }
+    
+    // Mover el placeholder a la posición correcta
+    if (closestItem) {
+        imagesList.insertBefore(placeholder, closestItem.nextSibling);
+    } else {
+        // Si no hay elemento cercano, colocar al final
+        imagesList.appendChild(placeholder);
+    }
 }
 
 // Manejar archivos cargados
@@ -131,7 +294,7 @@ function renderImage(imageData) {
         deleteImage(imageData.id);
     });
     
-    // Hacer la imagen arrastrable
+    // Hacer la imagen arrastrable (para desktop)
     imageItem.addEventListener('dragstart', handleDragStart);
     imageItem.addEventListener('dragover', handleDragOver);
     imageItem.addEventListener('dragenter', handleDragEnter);
@@ -142,7 +305,7 @@ function renderImage(imageData) {
     imagesList.appendChild(imageItem);
 }
 
-// Funcionalidad de drag and drop para reordenar
+// Funcionalidad de drag and drop para reordenar (para desktop)
 let draggedItem = null;
 
 function handleDragStart(e) {

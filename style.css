@@ -172,6 +172,7 @@ button {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 1rem;
+    position: relative; /* Necesario para el posicionamiento absoluto de elementos arrastrados */
 }
 
 .image-item {
@@ -181,6 +182,7 @@ button {
     overflow: hidden;
     cursor: grab;
     transition: var(--transition);
+    touch-action: none; /* Importante para eventos táctiles personalizados */
 }
 
 .image-item:hover {
@@ -189,8 +191,10 @@ button {
 }
 
 .image-item.dragging {
-    opacity: 0.5;
+    opacity: 0.8;
     cursor: grabbing;
+    transform: rotate(5deg);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .image-item img {
@@ -232,6 +236,29 @@ button {
 
 .image-actions button:hover {
     background: white;
+}
+
+/* Placeholder para arrastrar */
+.image-placeholder {
+    border: 2px dashed var(--primary-color);
+    border-radius: var(--border-radius);
+    background-color: rgba(67, 97, 238, 0.1);
+    height: 132px; /* Altura aproximada de image-item (120px de imagen + bordes) */
+}
+
+/* Instrucciones para dispositivos táctiles */
+.touch-instructions {
+    background-color: #e9f5ff;
+    border-left: 4px solid var(--primary-color);
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.touch-instructions p {
+    margin: 0;
+    color: var(--dark-color);
 }
 
 /* Formulario de configuración */
@@ -294,6 +321,16 @@ button {
     .margins-container {
         grid-template-columns: 1fr 1fr;
     }
+    
+    /* Mejorar usabilidad táctil */
+    .image-item {
+        cursor: pointer;
+    }
+    
+    .image-actions button {
+        width: 30px;
+        height: 30px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -311,5 +348,9 @@ button {
     
     .margins-container {
         grid-template-columns: 1fr;
+    }
+    
+    .images-list {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
 }
